@@ -1,6 +1,5 @@
 ## Project info
 
-
 **Use your preferred IDE**
 
 If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
@@ -168,3 +167,7 @@ npm run lint         # Run ESLint
 - **Input Validation**: Client and server-side validation
 - **Authentication**: Secure user authentication flow
 - **Environment Variables**: Secure configuration management
+
+## 🧑‍💻 Team Contributions
+
+All team member contribution details are documented in their respective `names.md` files (e.g., `Krishil.md`) in this repository. Please refer to those files for a detailed breakdown of individual work and problem-solving approaches.
