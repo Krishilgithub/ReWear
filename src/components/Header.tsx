@@ -44,24 +44,47 @@ const Header = () => {
 
 				{/* Desktop Navigation */}
 				<nav className="hidden md:flex items-center space-x-6">
-					<a
-						href="#browse"
-						className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-					>
-						Browse Items
-					</a>
-					<a
-						href="#how-it-works"
-						className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-					>
-						How It Works
-					</a>
-					<a
-						href="#about"
-						className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-					>
-						About
-					</a>
+					{user ? (
+						<>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => navigate("/browse")}
+								className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								Browse Items
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => navigate("/add-item")}
+								className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								Add Item
+							</Button>
+						</>
+					) : (
+						<>
+							<a
+								href="#browse"
+								className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								Browse Items
+							</a>
+							<a
+								href="#how-it-works"
+								className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								How It Works
+							</a>
+							<a
+								href="#about"
+								className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								About
+							</a>
+						</>
+					)}
 				</nav>
 
 				{/* Desktop Actions */}
@@ -111,24 +134,47 @@ const Header = () => {
 			{isMenuOpen && (
 				<div className="md:hidden border-t bg-background">
 					<div className="container py-4 space-y-2">
-						<a
-							href="#browse"
-							className="block py-2 text-sm font-medium text-muted-foreground"
-						>
-							Browse Items
-						</a>
-						<a
-							href="#how-it-works"
-							className="block py-2 text-sm font-medium text-muted-foreground"
-						>
-							How It Works
-						</a>
-						<a
-							href="#about"
-							className="block py-2 text-sm font-medium text-muted-foreground"
-						>
-							About
-						</a>
+						{user ? (
+							<>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => navigate('/browse')}
+									className="w-full justify-start"
+								>
+									Browse Items
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => navigate('/add-item')}
+									className="w-full justify-start"
+								>
+									Add Item
+								</Button>
+							</>
+						) : (
+							<>
+								<a
+									href="#browse"
+									className="block py-2 text-sm font-medium text-muted-foreground"
+								>
+									Browse Items
+								</a>
+								<a
+									href="#how-it-works"
+									className="block py-2 text-sm font-medium text-muted-foreground"
+								>
+									How It Works
+								</a>
+								<a
+									href="#about"
+									className="block py-2 text-sm font-medium text-muted-foreground"
+								>
+									About
+								</a>
+							</>
+						)}
 						<div className="flex flex-col space-y-2 pt-4">
 							{user ? (
 								<>

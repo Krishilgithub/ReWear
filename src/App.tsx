@@ -12,6 +12,9 @@ import SignUp from "./pages/SignUp";
 import UserDashboard from "./pages/UserDashboard";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
+import AddItem from "./pages/AddItem";
+import BrowseItems from "./pages/BrowseItems";
+import ItemDetail from "./pages/ItemDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +58,30 @@ const App = () => (
 								element={
 									<ProtectedRoute requireAdmin>
 										<AdminDashboard />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/add-item"
+								element={
+									<ProtectedRoute>
+										<AddItem />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/browse"
+								element={
+									<ProtectedRoute>
+										<BrowseItems />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/item/:id"
+								element={
+									<ProtectedRoute>
+										<ItemDetail />
 									</ProtectedRoute>
 								}
 							/>

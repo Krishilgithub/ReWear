@@ -28,7 +28,7 @@ const SignUp = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const { login, loginWithGoogle } = useAuth();
+	const { signup, loginWithGoogle } = useAuth();
 	const { toast } = useToast();
 	const navigate = useNavigate();
 	const { trackEvent, trackUserAction } = useAnalytics();
@@ -80,14 +80,14 @@ const SignUp = () => {
 			trackEvent("signup_attempt", "authentication", "email");
 			trackUserAction("signup_started", { method: "email" });
 
-			// This would call your serverless function for signup
-			// const response = await fetch('/api/auth/signup', {
-			//   method: 'POST',
-			//   headers: { 'Content-Type': 'application/json' },
-			//   body: JSON.stringify(formData)
-			// });
+			// Call the signup function from AuthContext
+			await signup({
+				name: formData.name,
+				email: formData.email,
+				password: formData.password,
+				phone: formData.phone
+			});
 
-			// For now, simulate successful signup and auto-login
 			trackEvent(ANALYTICS_EVENTS.USER_SIGN_UP, "authentication", "email");
 			trackUserAction("signup_success", {
 				method: "email",
@@ -99,8 +99,6 @@ const SignUp = () => {
 				description: "Welcome to ReWear! You've been signed in.",
 			});
 
-			// Auto-login after signup
-			await login(formData.email, formData.password);
 			navigate("/dashboard");
 		} catch (error) {
 			trackEvent("signup_failed", "authentication", "email");

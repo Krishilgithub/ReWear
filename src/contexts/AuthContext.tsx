@@ -10,19 +10,88 @@ interface User {
   authMethod?: 'email' | 'google';
 }
 
+interface StoredUser {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: 'user' | 'admin';
+  createdAt: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   loading: boolean;
+  signup: (userData: { name: string; email: string; password: string; phone?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Simple hash function for demo purposes (in production, use proper hashing)
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString();
+};
+
+// Local storage keys
+const USERS_STORAGE_KEY = 'rewear_users';
+const CURRENT_USER_KEY = 'rewear_current_user';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Get stored users from localStorage
+  const getStoredUsers = (): StoredUser[] => {
+    try {
+      const users = localStorage.getItem(USERS_STORAGE_KEY);
+      return users ? JSON.parse(users) : [];
+    } catch (error) {
+      console.error('Error reading stored users:', error);
+      return [];
+    }
+  };
+
+  // Save users to localStorage
+  const saveStoredUsers = (users: StoredUser[]) => {
+    try {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    } catch (error) {
+      console.error('Error saving users:', error);
+    }
+  };
+
+  // Get current user from localStorage
+  const getCurrentUser = (): User | null => {
+    try {
+      const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+      return currentUser ? JSON.parse(currentUser) : null;
+    } catch (error) {
+      console.error('Error reading current user:', error);
+      return null;
+    }
+  };
+
+  // Save current user to localStorage
+  const saveCurrentUser = (user: User | null) => {
+    try {
+      if (user) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
+    } catch (error) {
+      console.error('Error saving current user:', error);
+    }
+  };
 
   useEffect(() => {
     // Check for existing session on mount
@@ -40,14 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             authMethod: 'google'
           };
           setUser(userData);
+          saveCurrentUser(userData);
         } else {
-          // Check for server-side session
-          const response = await fetch('/api/auth/me', {
-            credentials: 'include'
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
+          // Check for locally stored user
+          const currentUser = getCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
           }
         }
       } catch (error) {
@@ -60,24 +127,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const signup = async (userData: { name: string; email: string; password: string; phone?: string }) => {
     try {
-      // Call your serverless function for login
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
+      const storedUsers = getStoredUsers();
+      
+      // Check if user already exists
+      const existingUser = storedUsers.find(u => u.email === userData.email);
+      if (existingUser) {
+        throw new Error('User with this email already exists');
       }
 
-      const userData = await response.json();
-      setUser({ ...userData, authMethod: 'email' });
+      // Create new user
+      const newUser: StoredUser = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        email: userData.email,
+        name: userData.name,
+        passwordHash: simpleHash(userData.password),
+        role: 'user',
+        createdAt: new Date().toISOString()
+      };
+
+      // Save to localStorage
+      storedUsers.push(newUser);
+      saveStoredUsers(storedUsers);
+
+      // Create user object for context
+      const user: User = {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        authMethod: 'email'
+      };
+
+      setUser(user);
+      saveCurrentUser(user);
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      const storedUsers = getStoredUsers();
+      const storedUser = storedUsers.find(u => u.email === email);
+      
+      if (!storedUser) {
+        throw new Error('User not found');
+      }
+
+      if (storedUser.passwordHash !== simpleHash(password)) {
+        throw new Error('Invalid password');
+      }
+
+      const user: User = {
+        id: storedUser.id,
+        email: storedUser.email,
+        name: storedUser.name,
+        role: storedUser.role,
+        authMethod: 'email'
+      };
+
+      setUser(user);
+      saveCurrentUser(user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -99,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       setUser(userData);
+      saveCurrentUser(userData);
       
       // Optionally, you can also send the user data to your backend
       // to create/update the user in your database
@@ -131,17 +245,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If user was authenticated with Google, sign out from Google
       if (user?.authMethod === 'google') {
         await googleAuthService.signOut();
-      } else {
-        // Call server-side logout
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
-        });
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      saveCurrentUser(null);
     }
   };
 
@@ -150,7 +259,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     loginWithGoogle,
     logout,
-    loading
+    loading,
+    signup
   };
 
   return (
