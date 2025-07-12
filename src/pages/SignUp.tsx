@@ -85,7 +85,7 @@ const SignUp = () => {
 				name: formData.name,
 				email: formData.email,
 				password: formData.password,
-				phone: formData.phone
+				phone: formData.phone,
 			});
 
 			trackEvent(ANALYTICS_EVENTS.USER_SIGN_UP, "authentication", "email");
@@ -99,7 +99,7 @@ const SignUp = () => {
 				description: "Welcome to ReWear! You've been signed in.",
 			});
 
-			navigate("/dashboard");
+			navigate("/");
 		} catch (error) {
 			trackEvent("signup_failed", "authentication", "email");
 			trackUserAction("signup_error", {
@@ -131,7 +131,7 @@ const SignUp = () => {
 				title: "Account created successfully!",
 				description: "Welcome to ReWear! You've been signed in with Google.",
 			});
-			navigate("/dashboard");
+			navigate("/");
 		} catch (error) {
 			trackEvent("google_signup_failed", "authentication", "google");
 			trackUserAction("signup_error", {

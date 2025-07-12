@@ -42,7 +42,7 @@ const SignIn = () => {
 				title: "Welcome back!",
 				description: "You've been successfully signed in.",
 			});
-			navigate("/dashboard");
+			navigate("/");
 		} catch (error) {
 			// Track failed sign in
 			trackEvent("sign_in_failed", "authentication", "email");
@@ -76,7 +76,7 @@ const SignIn = () => {
 				title: "Welcome back!",
 				description: "You've been successfully signed in with Google.",
 			});
-			navigate("/dashboard");
+			navigate("/");
 		} catch (error) {
 			// Track failed Google sign in
 			trackEvent("google_sign_in_failed", "authentication", "google");
