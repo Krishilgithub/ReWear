@@ -1,4 +1,4 @@
-# Closet Circle Exchange
+# ReWear
 
 ## About Our Project
 
@@ -191,7 +191,7 @@ npm run lint         # Run ESLint
 
 ## 🧑‍💻 Team Contributions
 
-All team members have created their respective `names.md` files (e.g., `Krishil.md`) in this repository to showcase their individual contributions, challenges faced, and problem-solving approaches throughout the development of Closet Circle Exchange.
+All team members have created their respective `names.md` files (e.g., `Krishil.md`) in this repository to showcase their individual contributions, challenges faced, and problem-solving approaches throughout the development of ReWear.
 
 Please refer to these files for detailed breakdowns of:
 
