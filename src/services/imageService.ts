@@ -53,34 +53,56 @@ export class ImageService {
 		file: File,
 		type: "profile" | "item"
 	): Promise<ImageUploadResult> {
+		console.log("ImageService: Starting upload", { file, type });
+
 		// Validate the image
 		const validation = this.validateImage(file);
 		if (!validation.isValid) {
+			console.error("ImageService: Validation failed", validation.error);
 			throw new Error(validation.error);
 		}
+
+		console.log("ImageService: Validation passed");
 
 		// Create a unique ID for the image
 		const imageId = `img_${Date.now()}_${Math.random()
 			.toString(36)
 			.substr(2, 9)}`;
 
-		// Process the image (resize if needed)
-		const processedImage = await this.processImage(file);
+		console.log("ImageService: Generated image ID", imageId);
 
-		// Convert to base64 for localStorage storage
-		const base64Url = await this.fileToBase64(processedImage);
+		try {
+			// Process the image (resize if needed)
+			console.log("ImageService: Processing image");
+			const processedImage = await this.processImage(file);
+			console.log("ImageService: Image processed", {
+				originalSize: file.size,
+				processedSize: processedImage.size,
+			});
 
-		// Create result object
-		const result: ImageUploadResult = {
-			id: imageId,
-			url: base64Url,
-			publicId: `${type}_${imageId}`,
-			filename: file.name,
-			size: processedImage.size,
-			mimeType: processedImage.type,
-		};
+			// Convert to base64 for localStorage storage
+			console.log("ImageService: Converting to base64");
+			const base64Url = await this.fileToBase64(processedImage);
+			console.log("ImageService: Base64 conversion complete", {
+				base64Length: base64Url.length,
+			});
 
-		return result;
+			// Create result object
+			const result: ImageUploadResult = {
+				id: imageId,
+				url: base64Url,
+				publicId: `${type}_${imageId}`,
+				filename: file.name,
+				size: processedImage.size,
+				mimeType: processedImage.type,
+			};
+
+			console.log("ImageService: Upload completed successfully", result);
+			return result;
+		} catch (error) {
+			console.error("ImageService: Upload failed", error);
+			throw error;
+		}
 	}
 
 	// Process image (resize if too large)

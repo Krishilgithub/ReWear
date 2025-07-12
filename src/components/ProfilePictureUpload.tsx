@@ -29,10 +29,24 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
 	const handleFileSelect = useCallback(
 		async (file: File) => {
+			console.log("ProfilePictureUpload: Starting file upload", { file });
 			setIsUploading(true);
 
 			try {
+				// Validate file before upload
+				if (!file) {
+					throw new Error("No file selected");
+				}
+
+				console.log("ProfilePictureUpload: File validation passed", {
+					name: file.name,
+					size: file.size,
+					type: file.type,
+				});
+
 				const uploadedImage = await ImageService.uploadImage(file, "profile");
+				console.log("ProfilePictureUpload: Upload successful", uploadedImage);
+
 				setPreviewImage(uploadedImage);
 				onPictureSelected(uploadedImage);
 
@@ -41,6 +55,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 					description: "Your profile picture has been uploaded successfully",
 				});
 			} catch (error) {
+				console.error("ProfilePictureUpload: Upload failed", error);
 				toast({
 					title: "Upload failed",
 					description:
@@ -56,6 +71,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
 	const handleFileInputChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
+			console.log("ProfilePictureUpload: File input changed", e.target.files);
 			const files = e.target.files;
 			if (files && files.length > 0) {
 				handleFileSelect(files[0]);
@@ -65,6 +81,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 	);
 
 	const removePicture = useCallback(() => {
+		console.log("ProfilePictureUpload: Removing picture");
 		setPreviewImage(null);
 		onPictureSelected(null);
 		toast({
@@ -74,6 +91,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 	}, [onPictureSelected, toast]);
 
 	const openFileDialog = useCallback(() => {
+		console.log("ProfilePictureUpload: Opening file dialog");
 		fileInputRef.current?.click();
 	}, []);
 
@@ -163,7 +181,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 			{/* Help Text */}
 			<p className="text-xs text-muted-foreground">
 				Upload a clear photo of yourself. Recommended size: 400x400 pixels or
-				larger.
+				larger. Supported formats: JPEG, PNG, WebP (max 5MB).
 			</p>
 		</div>
 	);

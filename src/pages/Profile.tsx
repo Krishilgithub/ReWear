@@ -36,29 +36,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import ProfilePictureUpload from "@/components/ProfilePictureUpload";
 import { userService } from "@/services/dataService";
-
-interface UserProfile {
-	id: string;
-	name: string;
-	email: string;
-	phone: string;
-	location: string;
-	bio: string;
-	avatar: string;
-	points: number;
-	memberSince: string;
-	totalSwaps: number;
-	rating: number;
-	itemsListed: number;
-	itemsReceived: number;
-}
+import { User as UserType } from "@/types";
+import { ImageUploadResult } from "@/services/imageService";
 
 const Profile = () => {
 	const { user, logout } = useAuth();
 	const { toast } = useToast();
 	const [isEditing, setIsEditing] = useState(false);
-	const [profile, setProfile] = useState<User | null>(null);
-	const [editForm, setEditForm] = useState<User | null>(null);
+	const [profile, setProfile] = useState<UserType | null>(null);
+	const [editForm, setEditForm] = useState<UserType | null>(null);
 
 	useEffect(() => {
 		if (user?.id) {
@@ -91,7 +77,7 @@ const Profile = () => {
 		setIsEditing(false);
 	};
 
-	const handleInputChange = (field: keyof User, value: string) => {
+	const handleInputChange = (field: keyof UserType, value: string) => {
 		if (!editForm) return;
 		setEditForm({
 			...editForm,
@@ -99,11 +85,27 @@ const Profile = () => {
 		});
 	};
 
-	const handleProfilePictureUpdate = (image) => {
+	const handleProfilePictureUpdate = (image: ImageUploadResult | null) => {
+		console.log("Profile: handleProfilePictureUpdate called", { image });
+
 		if (user?.id && image) {
+			console.log("Profile: Updating profile picture for user", user.id);
 			const updated = userService.updateProfilePicture(user.id, image.url);
-			setProfile(updated);
-			setEditForm(updated);
+			console.log("Profile: Profile updated", updated);
+
+			if (updated) {
+				setProfile(updated);
+				setEditForm(updated);
+				console.log("Profile: State updated with new profile picture");
+			} else {
+				console.error("Profile: Failed to update profile picture");
+			}
+		} else {
+			console.log("Profile: No image or user ID provided", {
+				hasUser: !!user,
+				userId: user?.id,
+				hasImage: !!image,
+			});
 		}
 	};
 
@@ -141,25 +143,25 @@ const Profile = () => {
 	const stats = [
 		{
 			label: "Total Points",
-			value: profile.points,
+			value: profile?.points || 0,
 			icon: Star,
 			color: "text-yellow-500",
 		},
 		{
 			label: "Items Listed",
-			value: profile.itemsListed,
+			value: 0, // Will be calculated from items service
 			icon: ShoppingBag,
 			color: "text-blue-500",
 		},
 		{
 			label: "Items Received",
-			value: profile.itemsReceived,
+			value: 0, // Will be calculated from swaps service
 			icon: Heart,
 			color: "text-red-500",
 		},
 		{
 			label: "Total Swaps",
-			value: profile.totalSwaps,
+			value: 0, // Will be calculated from swaps service
 			icon: Activity,
 			color: "text-green-500",
 		},
@@ -200,20 +202,31 @@ const Profile = () => {
 								</Badge>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								<div className="flex items-center space-x-2 text-sm">
-									<MapPin className="w-4 h-4 text-muted-foreground" />
-									<span>{profile.location}</span>
-								</div>
-								<div className="flex items-center space-x-2 text-sm">
-									<Calendar className="w-4 h-4 text-muted-foreground" />
-									<span>Member since {profile.memberSince}</span>
-								</div>
+								{profile.location && (
+									<div className="flex items-center space-x-2 text-sm">
+										<MapPin className="w-4 h-4 text-muted-foreground" />
+										<span>{profile.location}</span>
+									</div>
+								)}
+								{profile.createdAt && (
+									<div className="flex items-center space-x-2 text-sm">
+										<Calendar className="w-4 h-4 text-muted-foreground" />
+										<span>
+											Member since{" "}
+											{new Date(profile.createdAt).toLocaleDateString()}
+										</span>
+									</div>
+								)}
 								<div className="flex items-center space-x-2 text-sm">
 									<Star className="w-4 h-4 text-yellow-500" />
-									<span>{profile.rating} rating</span>
+									<span>{profile.points || 0} points</span>
 								</div>
 								<Separator />
-								<p className="text-sm text-muted-foreground">{profile.bio}</p>
+								<p className="text-sm text-muted-foreground">
+									{profile.authMethod === "google"
+										? "Google Account"
+										: "Email Account"}
+								</p>
 							</CardContent>
 						</Card>
 
@@ -315,48 +328,30 @@ const Profile = () => {
 												/>
 											</div>
 											<div className="space-y-2">
-												<Label htmlFor="phone">Phone</Label>
-												<Input
-													id="phone"
-													value={
-														isEditing && editForm
-															? editForm.phone
-															: profile.phone
-													}
-													onChange={(e) =>
-														handleInputChange("phone", e.target.value)
-													}
-													disabled={!isEditing}
-												/>
-											</div>
-											<div className="space-y-2">
 												<Label htmlFor="location">Location</Label>
 												<Input
 													id="location"
 													value={
 														isEditing && editForm
-															? editForm.location
-															: profile.location
+															? editForm.location || ""
+															: profile.location || ""
 													}
 													onChange={(e) =>
 														handleInputChange("location", e.target.value)
 													}
 													disabled={!isEditing}
+													placeholder="Enter your location"
 												/>
 											</div>
-										</div>
-										<div className="space-y-2">
-											<Label htmlFor="bio">Bio</Label>
-											<Input
-												id="bio"
-												value={
-													isEditing && editForm ? editForm.bio : profile.bio
-												}
-												onChange={(e) =>
-													handleInputChange("bio", e.target.value)
-												}
-												disabled={!isEditing}
-											/>
+											<div className="space-y-2">
+												<Label htmlFor="role">Role</Label>
+												<Input
+													id="role"
+													value={profile.role}
+													disabled={true}
+													className="bg-muted"
+												/>
+											</div>
 										</div>
 									</CardContent>
 								</Card>
