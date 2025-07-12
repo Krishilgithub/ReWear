@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  points       Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items          Item[]        @relation("UserItems")
+  swapRequests   SwapRequest[] @relation("Requester")
+  swapsAsOwner   Swap[]        @relation("SwapOwner")
+  swapsAsSwapper Swap[]        @relation("SwapSwapper")
+}
+
+model Item {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  category    String
+  type        String
+  size        String
+  condition   String
+  tags        String[]
+  status      ItemStatus @default(AVAILABLE)
+  createdAt   DateTime   @default(now())
+
+  userId String
+  user   User   @relation("UserItems", fields: [userId], references: [id])
+
+  images       ItemImage[]
+  swapRequests SwapRequest[]
+  swaps        Swap[]
+}
+
+model ItemImage {
+  id       String @id @default(uuid())
+  imageUrl String
+  publicId String
+  itemId   String
+  item     Item   @relation(fields: [itemId], references: [id])
+}
+
+model SwapRequest {
+  id        String            @id @default(uuid())
+  status    SwapRequestStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  requesterId String
+  requester   User   @relation("Requester", fields: [requesterId], references: [id])
+}
+
+model Swap {
+  id          String     @id @default(uuid())
+  method      SwapMethod // SWAP or POINTS
+  completedAt DateTime   @default(now())
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  ownerId String
+  owner   User   @relation("SwapOwner", fields: [ownerId], references: [id])
+
+  swapperId String
+  swapper   User   @relation("SwapSwapper", fields: [swapperId], references: [id])
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+}
+
+enum ItemStatus {
+  AVAILABLE
+  PENDING
+  SWAPPED
+  REJECTED
+}
+
+enum SwapRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum SwapMethod {
+  SWAP
+  POINTS
+}
