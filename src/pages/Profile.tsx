@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,8 @@ import {
 	Palette,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ProfilePictureUpload from "@/components/ProfilePictureUpload";
+import { userService } from "@/services/dataService";
 
 interface UserProfile {
 	id: string;
@@ -55,23 +57,16 @@ const Profile = () => {
 	const { user, logout } = useAuth();
 	const { toast } = useToast();
 	const [isEditing, setIsEditing] = useState(false);
-	const [profile, setProfile] = useState<UserProfile>({
-		id: user?.id || "1",
-		name: user?.name || "John Doe",
-		email: user?.email || "john@example.com",
-		phone: "+1 (555) 123-4567",
-		location: "New York, NY",
-		bio: "Passionate about sustainable fashion and reducing textile waste. Love finding unique pieces and giving clothes a second life!",
-		avatar: "",
-		points: 245,
-		memberSince: "January 2024",
-		totalSwaps: 12,
-		rating: 4.8,
-		itemsListed: 8,
-		itemsReceived: 4,
-	});
+	const [profile, setProfile] = useState<User | null>(null);
+	const [editForm, setEditForm] = useState<User | null>(null);
 
-	const [editForm, setEditForm] = useState(profile);
+	useEffect(() => {
+		if (user?.id) {
+			const loaded = userService.getById(user.id);
+			setProfile(loaded);
+			setEditForm(loaded);
+		}
+	}, [user]);
 
 	const handleEdit = () => {
 		setEditForm(profile);
@@ -79,12 +74,16 @@ const Profile = () => {
 	};
 
 	const handleSave = () => {
-		setProfile(editForm);
-		setIsEditing(false);
-		toast({
-			title: "Profile updated",
-			description: "Your profile has been successfully updated.",
-		});
+		if (editForm && user?.id) {
+			const updated = userService.updateProfile(user.id, editForm);
+			setProfile(updated);
+			setEditForm(updated);
+			setIsEditing(false);
+			toast({
+				title: "Profile updated",
+				description: "Your profile has been successfully updated.",
+			});
+		}
 	};
 
 	const handleCancel = () => {
@@ -92,11 +91,20 @@ const Profile = () => {
 		setIsEditing(false);
 	};
 
-	const handleInputChange = (field: keyof UserProfile, value: string) => {
+	const handleInputChange = (field: keyof User, value: string) => {
+		if (!editForm) return;
 		setEditForm({
 			...editForm,
 			[field]: value,
 		});
+	};
+
+	const handleProfilePictureUpdate = (image) => {
+		if (user?.id && image) {
+			const updated = userService.updateProfilePicture(user.id, image.url);
+			setProfile(updated);
+			setEditForm(updated);
+		}
 	};
 
 	const recentActivity = [
@@ -157,7 +165,7 @@ const Profile = () => {
 		},
 	];
 
-	if (!user) {
+	if (!user || !profile) {
 		return <div>Loading...</div>;
 	}
 
@@ -179,23 +187,11 @@ const Profile = () => {
 						<Card>
 							<CardHeader className="text-center">
 								<div className="relative mx-auto mb-4">
-									<Avatar className="w-24 h-24">
-										<AvatarImage src={profile.avatar} />
-										<AvatarFallback className="text-2xl">
-											{profile.name
-												.split(" ")
-												.map((n) => n[0])
-												.join("")
-												.toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-									<Button
-										size="sm"
-										variant="secondary"
-										className="absolute -bottom-2 -right-2 w-8 h-8 p-0 rounded-full"
-									>
-										<Camera className="w-4 h-4" />
-									</Button>
+									<ProfilePictureUpload
+										currentPicture={profile.picture}
+										onPictureSelected={handleProfilePictureUpdate}
+										userName={profile.name}
+									/>
 								</div>
 								<CardTitle className="text-xl">{profile.name}</CardTitle>
 								<CardDescription>{profile.email}</CardDescription>
@@ -293,7 +289,9 @@ const Profile = () => {
 												<Label htmlFor="name">Full Name</Label>
 												<Input
 													id="name"
-													value={isEditing ? editForm.name : profile.name}
+													value={
+														isEditing && editForm ? editForm.name : profile.name
+													}
 													onChange={(e) =>
 														handleInputChange("name", e.target.value)
 													}
@@ -305,7 +303,11 @@ const Profile = () => {
 												<Input
 													id="email"
 													type="email"
-													value={isEditing ? editForm.email : profile.email}
+													value={
+														isEditing && editForm
+															? editForm.email
+															: profile.email
+													}
 													onChange={(e) =>
 														handleInputChange("email", e.target.value)
 													}
@@ -316,7 +318,11 @@ const Profile = () => {
 												<Label htmlFor="phone">Phone</Label>
 												<Input
 													id="phone"
-													value={isEditing ? editForm.phone : profile.phone}
+													value={
+														isEditing && editForm
+															? editForm.phone
+															: profile.phone
+													}
 													onChange={(e) =>
 														handleInputChange("phone", e.target.value)
 													}
@@ -328,7 +334,9 @@ const Profile = () => {
 												<Input
 													id="location"
 													value={
-														isEditing ? editForm.location : profile.location
+														isEditing && editForm
+															? editForm.location
+															: profile.location
 													}
 													onChange={(e) =>
 														handleInputChange("location", e.target.value)
@@ -341,7 +349,9 @@ const Profile = () => {
 											<Label htmlFor="bio">Bio</Label>
 											<Input
 												id="bio"
-												value={isEditing ? editForm.bio : profile.bio}
+												value={
+													isEditing && editForm ? editForm.bio : profile.bio
+												}
 												onChange={(e) =>
 													handleInputChange("bio", e.target.value)
 												}

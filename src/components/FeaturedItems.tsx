@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Star, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const featuredItems = [
 	{
@@ -65,6 +66,7 @@ const featuredItems = [
 ];
 
 const FeaturedItems = () => {
+	const { user } = useAuth();
 	const [items, setItems] = useState(featuredItems);
 	const navigate = useNavigate();
 
@@ -76,16 +78,24 @@ const FeaturedItems = () => {
 		);
 	};
 
-	const handleSwapRequest = () => {
-		navigate("/sign-in");
+	const handleSwapRequest = (item: any) => {
+		if (!user) {
+			navigate("/sign-in");
+			return;
+		}
+		navigate(`/item/${item.id}`, { state: { showSwapModal: true } });
 	};
 
-	const handleUsePoints = () => {
-		navigate("/sign-in");
+	const handleUsePoints = (item: any) => {
+		if (!user) {
+			navigate("/sign-in");
+			return;
+		}
+		navigate(`/item/${item.id}`, { state: { showSwapModal: true } });
 	};
 
 	const handleViewAllItems = () => {
-		navigate("/sign-in");
+		navigate("/browse");
 	};
 
 	return (
@@ -179,14 +189,14 @@ const FeaturedItems = () => {
 										size="sm"
 										variant="outline"
 										className="flex-1 text-xs"
-										onClick={handleSwapRequest}
+										onClick={() => handleSwapRequest(item)}
 									>
 										Swap Request
 									</Button>
 									<Button
 										size="sm"
 										className="flex-1 text-xs gradient-sage text-white"
-										onClick={handleUsePoints}
+										onClick={() => handleUsePoints(item)}
 									>
 										Use Points
 									</Button>

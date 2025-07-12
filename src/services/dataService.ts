@@ -53,10 +53,12 @@ const generateId = (): string => {
 // Items Service
 export const itemsService = {
 	getAll: async (): Promise<Item[]> => {
-		const res = await fetch("/api/items");
-		const data = await res.json();
-		if (data.success) return data.items;
-		throw new Error(data.error || "Failed to fetch items");
+		let items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
+		if (!items || items.length === 0) {
+			seedSampleItems();
+			items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
+		}
+		return items;
 	},
 
 	getById: async (id: string): Promise<Item | null> => {
@@ -74,22 +76,36 @@ export const itemsService = {
 		userId: string,
 		userName: string
 	): Promise<Item> => {
-		const res = await fetch("/api/items", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				userId,
-				...itemData,
-				status: "pending",
-			}),
-		});
-		const data = await res.json();
-		if (data.success) return data.item;
-		throw new Error(data.error || "Failed to create item");
+		const items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
+		const newItem: Item = {
+			id: generateId(),
+			...itemData,
+			userId,
+			user: { id: userId, name: userName, email: "", role: "user" },
+			status: "available",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			images: itemData.images.map((img, idx) => ({
+				id: generateId(),
+				imageUrl: img.url,
+				publicId: img.publicId,
+				itemId: "", // will be set after creation
+				isPrimary: idx === 0,
+			})),
+			swapRequests: [],
+		};
+		// Set itemId for images
+		newItem.images = newItem.images.map((img) => ({
+			...img,
+			itemId: newItem.id,
+		}));
+		items.push(newItem);
+		saveToStorage(STORAGE_KEYS.ITEMS, items);
+		return newItem;
 	},
 
 	update: (id: string, updates: Partial<Item>): Item | null => {
-		const items = itemsService.getAll();
+		const items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
 		const index = items.findIndex((item) => item.id === id);
 
 		if (index === -1) return null;
@@ -105,7 +121,7 @@ export const itemsService = {
 	},
 
 	delete: (id: string): boolean => {
-		const items = itemsService.getAll();
+		const items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
 		const filteredItems = items.filter((item) => item.id !== id);
 
 		if (filteredItems.length === items.length) return false;
@@ -115,7 +131,7 @@ export const itemsService = {
 	},
 
 	search: (params: SearchParams): PaginatedResponse<Item> => {
-		let items = itemsService.getAll();
+		let items = getFromStorage<Item[]>(STORAGE_KEYS.ITEMS, []);
 
 		// Apply search query
 		if (params.query) {
@@ -560,3 +576,343 @@ export const userService = {
 		return userService.updateProfile(userId, { picture: pictureUrl });
 	},
 };
+
+function seedSampleItems() {
+	const sampleItems = [
+		{
+			id: generateId(),
+			title: "Vintage Denim Jacket",
+			description: "Classic blue denim jacket, barely worn.",
+			category: "outerwear",
+			type: "casual",
+			size: "M",
+			condition: "like_new",
+			tags: ["denim", "jacket", "vintage"],
+			status: "available",
+			points: 25,
+			location: "Brooklyn, NY",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user1",
+			user: {
+				id: "user1",
+				name: "Alice Smith",
+				email: "alice@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=400&h=400&fit=crop",
+					publicId: "img1",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Floral Summer Dress",
+			description: "Beautiful floral print, perfect for spring.",
+			category: "dresses",
+			type: "casual",
+			size: "S",
+			condition: "good",
+			tags: ["dress", "floral", "summer"],
+			status: "available",
+			points: 30,
+			location: "San Francisco, CA",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user2",
+			user: {
+				id: "user2",
+				name: "Bob Lee",
+				email: "bob@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&h=400&fit=crop",
+					publicId: "img2",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Designer Sneakers",
+			description: "Comfortable white sneakers, lightly used.",
+			category: "shoes",
+			type: "sporty",
+			size: "9",
+			condition: "good",
+			tags: ["sneakers", "designer", "shoes"],
+			status: "available",
+			points: 40,
+			location: "Austin, TX",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user3",
+			user: {
+				id: "user3",
+				name: "Carol King",
+				email: "carol@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
+					publicId: "img3",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Cashmere Sweater",
+			description: "Soft beige cashmere, cozy and warm.",
+			category: "tops",
+			type: "luxury",
+			size: "L",
+			condition: "excellent",
+			tags: ["sweater", "cashmere", "cozy"],
+			status: "available",
+			points: 45,
+			location: "Seattle, WA",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user4",
+			user: {
+				id: "user4",
+				name: "David Kim",
+				email: "david@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop",
+					publicId: "img4",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Classic Trench Coat",
+			description: "Timeless beige trench coat, water-resistant.",
+			category: "outerwear",
+			type: "formal",
+			size: "M",
+			condition: "excellent",
+			tags: ["coat", "trench", "classic"],
+			status: "available",
+			points: 60,
+			location: "Chicago, IL",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user5",
+			user: {
+				id: "user5",
+				name: "Eve Turner",
+				email: "eve@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&h=400&fit=crop",
+					publicId: "img5",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Leather Handbag",
+			description: "Genuine leather, spacious and stylish.",
+			category: "bags",
+			type: "luxury",
+			size: "one_size",
+			condition: "like_new",
+			tags: ["handbag", "leather", "bag"],
+			status: "available",
+			points: 80,
+			location: "Los Angeles, CA",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user6",
+			user: {
+				id: "user6",
+				name: "Fiona Green",
+				email: "fiona@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop",
+					publicId: "img6",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Wool Scarf",
+			description: "Warm wool scarf, perfect for winter.",
+			category: "accessories",
+			type: "casual",
+			size: "one_size",
+			condition: "good",
+			tags: ["scarf", "wool", "winter"],
+			status: "available",
+			points: 15,
+			location: "Boston, MA",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user7",
+			user: {
+				id: "user7",
+				name: "George Hall",
+				email: "george@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1464983953574-0892a716854b?w=400&h=400&fit=crop",
+					publicId: "img7",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Plaid Button-Up Shirt",
+			description: "Red plaid shirt, soft cotton fabric.",
+			category: "tops",
+			type: "casual",
+			size: "L",
+			condition: "good",
+			tags: ["shirt", "plaid", "cotton"],
+			status: "available",
+			points: 20,
+			location: "Portland, OR",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user8",
+			user: {
+				id: "user8",
+				name: "Hannah Lee",
+				email: "hannah@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=400&fit=crop",
+					publicId: "img8",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Black Ankle Boots",
+			description: "Chic black boots, perfect for fall outfits.",
+			category: "shoes",
+			type: "vintage",
+			size: "8",
+			condition: "excellent",
+			tags: ["boots", "ankle", "black"],
+			status: "available",
+			points: 55,
+			location: "Denver, CO",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user9",
+			user: {
+				id: "user9",
+				name: "Irene Fox",
+				email: "irene@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&h=400&fit=crop",
+					publicId: "img9",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+		{
+			id: generateId(),
+			title: "Striped Maxi Skirt",
+			description: "Colorful striped skirt, flowy and fun.",
+			category: "bottoms",
+			type: "casual",
+			size: "M",
+			condition: "like_new",
+			tags: ["skirt", "striped", "maxi"],
+			status: "available",
+			points: 35,
+			location: "Miami, FL",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			userId: "user10",
+			user: {
+				id: "user10",
+				name: "Jackie Chan",
+				email: "jackie@example.com",
+				role: "user",
+			},
+			images: [
+				{
+					id: generateId(),
+					imageUrl:
+						"https://images.unsplash.com/photo-1465101046530-73398c7f28ca?w=400&h=400&fit=crop",
+					publicId: "img10",
+					itemId: "",
+					isPrimary: true,
+				},
+			],
+			swapRequests: [],
+		},
+	];
+	// Set itemId for images
+	sampleItems.forEach((item) => {
+		item.images = item.images.map((img) => ({ ...img, itemId: item.id }));
+	});
+	saveToStorage(STORAGE_KEYS.ITEMS, sampleItems);
+}

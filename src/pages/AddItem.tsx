@@ -123,7 +123,7 @@ const AddItem = () => {
 				...data,
 				images: selectedImages,
 			};
-			itemsService.create(itemData, user.id, user.name);
+			await itemsService.create(itemData, user.id, user.name);
 			trackEvent("item_created", "items", "manual");
 			toast({
 				title: "Item added successfully!",
@@ -131,7 +131,7 @@ const AddItem = () => {
 			});
 			reset();
 			setSelectedImages([]);
-			navigate("/dashboard");
+			navigate("/browse");
 		} catch (error) {
 			trackEvent("item_creation_failed", "items", "error");
 			toast({

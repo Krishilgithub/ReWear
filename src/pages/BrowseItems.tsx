@@ -117,10 +117,33 @@ const BrowseItems = () => {
 	}, [user]);
 
 	// Handle search
-	const handleSearch = (e: React.FormEvent) => {
+	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setCurrentPage(1);
-		loadItems();
+		setLoading(true);
+		try {
+			const dbItems = await itemsService.getAll();
+			const filtered = dbItems.filter(
+				(item) =>
+					(user?.role === "admin" || item.status === "available") &&
+					(item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+						item.description
+							.toLowerCase()
+							.includes(searchQuery.toLowerCase()) ||
+						item.tags.some((tag) =>
+							tag.toLowerCase().includes(searchQuery.toLowerCase())
+						))
+			);
+			setItems(filtered);
+		} catch (e) {
+			toast({
+				title: "Failed to load items",
+				description: e.message,
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
 		trackEvent("items_search", "browse", searchQuery);
 	};
 
