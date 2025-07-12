@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { googleAuthService, GoogleUser } from '@/services/googleAuth';
 
 interface User {
   id: string;
   email: string;
   name: string;
   role: 'user' | 'admin';
+  picture?: string;
+  authMethod?: 'email' | 'google';
 }
 
 interface AuthContextType {
@@ -25,13 +28,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session on mount
     const checkSession = async () => {
       try {
-        // This will call your serverless function to verify session
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const userData = await response.json();
+        // First check for Google authentication
+        const googleUser = googleAuthService.getCurrentUser();
+        if (googleUser) {
+          const userData: User = {
+            id: googleUser.sub,
+            email: googleUser.email,
+            name: googleUser.name,
+            role: 'user',
+            picture: googleUser.picture,
+            authMethod: 'google'
+          };
           setUser(userData);
+        } else {
+          // Check for server-side session
+          const response = await fetch('/api/auth/me', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          }
         }
       } catch (error) {
         console.error('Session check failed:', error);
@@ -60,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const userData = await response.json();
-      setUser(userData);
+      setUser({ ...userData, authMethod: 'email' });
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -69,8 +86,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async () => {
     try {
-      // Redirect to your Google OAuth serverless function
-      window.location.href = '/api/auth/google';
+      const googleUser = await googleAuthService.signIn();
+      
+      // Convert Google user to our User interface
+      const userData: User = {
+        id: googleUser.sub,
+        email: googleUser.email,
+        name: googleUser.name,
+        role: 'user',
+        picture: googleUser.picture,
+        authMethod: 'google'
+      };
+      
+      setUser(userData);
+      
+      // Optionally, you can also send the user data to your backend
+      // to create/update the user in your database
+      try {
+        await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            googleId: googleUser.sub,
+            email: googleUser.email,
+            name: googleUser.name,
+            picture: googleUser.picture
+          }),
+          credentials: 'include'
+        });
+      } catch (error) {
+        console.error('Failed to sync user with backend:', error);
+        // Don't throw here as the user is already logged in locally
+      }
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
@@ -79,10 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      // If user was authenticated with Google, sign out from Google
+      if (user?.authMethod === 'google') {
+        await googleAuthService.signOut();
+      } else {
+        // Call server-side logout
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
