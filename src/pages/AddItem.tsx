@@ -31,6 +31,14 @@ import {
 import { itemsService } from "@/services/dataService";
 import { ImageUploadResult } from "@/services/imageService";
 import ImageUpload from "@/components/ImageUpload";
+import ModelPredictor from "@/components/ModelPredictor.jsx";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 
 const addItemSchema = z.object({
 	title: z.string().min(3, "Title must be at least 3 characters"),
@@ -65,6 +73,8 @@ const AddItem = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedImages, setSelectedImages] = useState<ImageUploadResult[]>([]);
 	const [newTag, setNewTag] = useState("");
+	const [aiDialogOpen, setAIDialogOpen] = useState(false);
+	const [aiPrediction, setAIPrediction] = useState("");
 
 	const {
 		register,
@@ -151,6 +161,42 @@ const AddItem = () => {
 					<CardTitle>Add New Item</CardTitle>
 				</CardHeader>
 				<CardContent>
+					{/* AI Autocomplete Button and Dialog */}
+					<Dialog open={aiDialogOpen} onOpenChange={setAIDialogOpen}>
+						<DialogTrigger asChild>
+							<Button type="button" variant="outline" className="mb-4">
+								Autocomplete with AI
+							</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>AI Product Autocomplete</DialogTitle>
+							</DialogHeader>
+							<ModelPredictor
+								// When prediction is made, setAIPrediction
+								// We'll wrap ModelPredictor to accept a callback
+								onPrediction={(pred) => setAIPrediction(pred)}
+							/>
+							{aiPrediction && (
+								<div className="mt-4 space-y-2">
+									<p>
+										AI Prediction: <b>{aiPrediction}</b>
+									</p>
+									<Button
+										type="button"
+										variant="default"
+										onClick={() => {
+											setValue("title", aiPrediction);
+											setValue("tags", [aiPrediction.toLowerCase()]);
+											setAIDialogOpen(false);
+										}}
+									>
+										Use Prediction
+									</Button>
+								</div>
+							)}
+						</DialogContent>
+					</Dialog>
 					<form onSubmit={handleSubmit(onSubmit)}>
 						<div className="flex flex-col md:flex-row gap-8">
 							{/* Left: Image Upload */}
