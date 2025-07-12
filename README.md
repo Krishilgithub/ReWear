@@ -1,3 +1,24 @@
+# Closet Circle Exchange
+
+## About Our Project
+
+Closet Circle Exchange is a modern, sustainable clothing exchange platform that connects fashion-conscious individuals who want to give their pre-loved clothes a new life. Our platform promotes circular fashion by enabling users to swap, donate, and discover unique clothing items while building a community around sustainable fashion practices.
+
+### Key Features
+
+- **Smart Item Management**: Upload, categorize, and manage your clothing items with AI-powered product detail suggestions
+- **Secure Authentication**: Google OAuth integration for seamless user experience
+- **Dynamic User Profiles**: Personalized profiles with photo uploads, stats tracking, and location-based features
+- **Browse & Discover**: Advanced search and filtering to find the perfect clothing items
+- **Real-time Updates**: Dynamic data loading with localStorage support for offline development
+- **Responsive Design**: Modern UI built with shadcn/ui and Tailwind CSS for all devices
+
+### Our Mission
+
+We believe in making sustainable fashion accessible to everyone. By creating a platform where users can easily exchange clothing items, we're reducing textile waste and promoting a more conscious approach to fashion consumption.
+
+---
+
 ## Project info
 
 **Use your preferred IDE**
@@ -170,4 +191,15 @@ npm run lint         # Run ESLint
 
 ## 🧑‍💻 Team Contributions
 
-All team member contribution details are documented in their respective `names.md` files (e.g., `Krishil.md`) in this repository. Please refer to those files for a detailed breakdown of individual work and problem-solving approaches.
+All team members have created their respective `names.md` files (e.g., `Krishil.md`) in this repository to showcase their individual contributions, challenges faced, and problem-solving approaches throughout the development of Closet Circle Exchange.
+
+Please refer to these files for detailed breakdowns of:
+
+- Individual work and responsibilities
+- Technical challenges encountered and solutions implemented
+- Learning experiences and growth throughout the project
+- Specific features and components developed by each team member
+
+**Available Team Member Files:**
+
+- `Krishil.md` - Backend integration, authentication, dynamic data, and AI features
